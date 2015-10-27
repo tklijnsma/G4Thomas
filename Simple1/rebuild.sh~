@@ -1,0 +1,5 @@
+rm -rf cmake
+mkdir cmake
+cd cmake
+cmake ..
+make
