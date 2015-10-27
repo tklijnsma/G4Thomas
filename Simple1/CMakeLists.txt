@@ -64,6 +64,9 @@ foreach(_script ${EXAMPLEB4A_SCRIPTS})
     )
 endforeach()
 
+# Disables warnings; useful for debugging, but should be kept on by default
+add_definitions ("-w")
+
 #----------------------------------------------------------------------------
 # Install the executable to 'bin' directory under CMAKE_INSTALL_PREFIX
 #

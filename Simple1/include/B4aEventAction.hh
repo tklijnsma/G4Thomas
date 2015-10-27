@@ -59,18 +59,24 @@ class B4aEventAction : public G4UserEventAction
     G4double  fEnergyGap;
     G4double  fTrackLAbs; 
     G4double  fTrackLGap;
+    
+    G4double  fEnergyCal;
 };
 
 // inline functions
 
 inline void B4aEventAction::AddAbs(G4double de, G4double dl) {
-  fEnergyAbs += de; 
-  fTrackLAbs += dl;
+    fEnergyAbs += de; 
+    fTrackLAbs += dl;
+
+    fEnergyCal += de;
 }
 
 inline void B4aEventAction::AddGap(G4double de, G4double dl) {
-  fEnergyGap += de; 
-  fTrackLGap += dl;
+    fEnergyGap += de; 
+    fTrackLGap += dl;
+
+    fEnergyCal += de;
 }
                      
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
