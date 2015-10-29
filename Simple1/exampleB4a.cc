@@ -31,6 +31,12 @@
 #include "B4DetectorConstruction.hh"
 #include "B4aActionInitialization.hh"
 
+// Physics inclusions
+#include "G4EmStandardPhysics.hh"
+#include "G4PhysListFactory.hh"
+#include "G4VModularPhysicsList.hh"
+#include "G4EmUserPhysics.hh"
+
 #ifdef G4MULTITHREADED
 #include "G4MTRunManager.hh"
 #else
@@ -112,14 +118,49 @@ int main(int argc,char** argv)
     B4DetectorConstruction* detConstruction = new B4DetectorConstruction();
     runManager->SetUserInitialization(detConstruction);
 
-    
+    /*
     // ORIGINAL physics
     G4VModularPhysicsList* physicsList = new FTFP_BERT;
     runManager->SetUserInitialization(physicsList);
+    */
+
+
+    // NEW Physics
+    G4int switchOnScintillation = 1;
+    G4int switchOnCerenkov = 0;
+    //  G4int switchOnCerenkov = 1;
+    G4int propagateScintillation = 1;
+    G4int propagateCerenkov = 0;
+
+
+    std::string physName("");
+    G4PhysListFactory factory;
+    const std::vector<G4String>& names = factory.AvailablePhysLists();
+    for(unsigned n = 0; n != names.size(); n++)
+    G4cout << "PhysicsList: " << names[n] << G4endl;
+
+    if( physName == "")
+    {
+      char* path = getenv("PHYSLIST");
+      if( path ) physName = G4String(path);
+    }
+    if ( physName == "" || factory.IsReferencePhysList(physName))
+    {
+      physName = "FTFP_BERT";
+    }
+
+    G4cout << "Using physics list: " << physName << G4endl;
+    G4cout << "" << G4endl;
+    G4cout << ">>> Define physics list::begin <<<" << G4endl;
+    G4VModularPhysicsList* physics = factory.GetReferencePhysList(physName);
+
+    physics->RegisterPhysics(new G4EmUserPhysics(switchOnScintillation,switchOnCerenkov));
+
+    runManager-> SetUserInitialization(physics);
+    G4cout << ">>> Define physics list::end <<<" << G4endl; 
     
-
-
-
+   
+    // ----------------------------------------------------- End of physics //
 
 
     B4aActionInitialization* actionInitialization

@@ -724,7 +724,7 @@ G4VPhysicalVolume* B4DetectorConstruction::DefineVolumes()
     //G4double rotation = 0.0;
 
     //sin and cos for the rotation
-    G4double xPos = ix*(calorSizeXY/2.-0.696);
+    G4double xPos = ix*(calorSizeXY/2.-0.696) - 3.*mm; // Shift to the right a bit
     G4double yPos = iy*(calorSizeXY/2.-0.696) + sin(fRotation*3.14159265359/180.)*sqrt(((fibreLength-calorThickness)/2.+calorThickness/2.)*((fibreLength-calorThickness)/2.+calorThickness/2) + xPos*xPos);
 
 
