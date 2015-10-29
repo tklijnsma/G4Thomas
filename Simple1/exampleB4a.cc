@@ -66,80 +66,87 @@ namespace {
 
 int main(int argc,char** argv)
 {
-  // Evaluate arguments
-  //
-  if ( argc > 7 ) {
+    // Evaluate arguments
+    //
+    if ( argc > 7 ) {
     PrintUsage();
     return 1;
-  }
-  
-  G4String macro;
-  G4String session;
+    }
+
+    G4String macro;
+    G4String session;
 #ifdef G4MULTITHREADED
-  G4int nThreads = 0;
+    G4int nThreads = 0;
 #endif
-  for ( G4int i=1; i<argc; i=i+2 ) {
+    for ( G4int i=1; i<argc; i=i+2 ) {
     if      ( G4String(argv[i]) == "-m" ) macro = argv[i+1];
     else if ( G4String(argv[i]) == "-u" ) session = argv[i+1];
 #ifdef G4MULTITHREADED
     else if ( G4String(argv[i]) == "-t" ) {
-      nThreads = G4UIcommand::ConvertToInt(argv[i+1]);
+    nThreads = G4UIcommand::ConvertToInt(argv[i+1]);
     }
 #endif
     else {
-      PrintUsage();
-      return 1;
+    PrintUsage();
+    return 1;
     }
-  }  
-  
-  // Choose the Random engine
-  //
-  G4Random::setTheEngine(new CLHEP::RanecuEngine);
-  
-  // Construct the default run manager
-  //
+    }  
+
+    // Choose the Random engine
+    //
+    G4Random::setTheEngine(new CLHEP::RanecuEngine);
+
+    // Construct the default run manager
+    //
 #ifdef G4MULTITHREADED
-  G4MTRunManager * runManager = new G4MTRunManager;
-  if ( nThreads > 0 ) { 
+    G4MTRunManager * runManager = new G4MTRunManager;
+    if ( nThreads > 0 ) { 
     runManager->SetNumberOfThreads(nThreads);
-  }  
+    }  
 #else
-  G4RunManager * runManager = new G4RunManager;
+    G4RunManager * runManager = new G4RunManager;
 #endif
 
-  // Set mandatory initialization classes
-  //
-  B4DetectorConstruction* detConstruction = new B4DetectorConstruction();
-  runManager->SetUserInitialization(detConstruction);
+    // Set mandatory initialization classes
+    //
+    B4DetectorConstruction* detConstruction = new B4DetectorConstruction();
+    runManager->SetUserInitialization(detConstruction);
 
-  G4VModularPhysicsList* physicsList = new FTFP_BERT;
-  runManager->SetUserInitialization(physicsList);
     
-  B4aActionInitialization* actionInitialization
-     = new B4aActionInitialization(detConstruction);
-  runManager->SetUserInitialization(actionInitialization);
+    // ORIGINAL physics
+    G4VModularPhysicsList* physicsList = new FTFP_BERT;
+    runManager->SetUserInitialization(physicsList);
+    
 
-  // Initialize G4 kernel
-  //
-  runManager->Initialize();
-  
+
+
+
+
+    B4aActionInitialization* actionInitialization
+    = new B4aActionInitialization(detConstruction);
+    runManager->SetUserInitialization(actionInitialization);
+
+    // Initialize G4 kernel
+    //
+    runManager->Initialize();
+
 #ifdef G4VIS_USE
-  // Initialize visualization
-  G4VisManager* visManager = new G4VisExecutive;
-  // G4VisExecutive can take a verbosity argument - see /vis/verbose guidance.
-  // G4VisManager* visManager = new G4VisExecutive("Quiet");
-  visManager->Initialize();
+    // Initialize visualization
+    G4VisManager* visManager = new G4VisExecutive;
+    // G4VisExecutive can take a verbosity argument - see /vis/verbose guidance.
+    // G4VisManager* visManager = new G4VisExecutive("Quiet");
+    visManager->Initialize();
 #endif
 
-  // Get the pointer to the User Interface manager
-  G4UImanager* UImanager = G4UImanager::GetUIpointer();
+    // Get the pointer to the User Interface manager
+    G4UImanager* UImanager = G4UImanager::GetUIpointer();
 
-  if ( macro.size() ) {
+    if ( macro.size() ) {
     // batch mode
     G4String command = "/control/execute ";
     UImanager->ApplyCommand(command+macro);
-  }
-  else  {  
+    }
+    else  {  
     // interactive mode : define UI session
 #ifdef G4UI_USE
     G4UIExecutive* ui = new G4UIExecutive(argc, argv, session);
@@ -149,23 +156,23 @@ int main(int argc,char** argv)
     UImanager->ApplyCommand("/control/execute init.mac"); 
 #endif
     if (ui->IsGUI())
-      UImanager->ApplyCommand("/control/execute gui.mac");
+    UImanager->ApplyCommand("/control/execute gui.mac");
     ui->SessionStart();
     delete ui;
 #endif
-  }
+    }
 
-  // Job termination
-  // Free the store: user actions, physics_list and detector_description are
-  // owned and deleted by the run manager, so they should not be deleted 
-  // in the main() program !
+    // Job termination
+    // Free the store: user actions, physics_list and detector_description are
+    // owned and deleted by the run manager, so they should not be deleted 
+    // in the main() program !
 
 #ifdef G4VIS_USE
-  delete visManager;
+    delete visManager;
 #endif
-  delete runManager;
+    delete runManager;
 
-  return 0;
+    return 0;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo.....
