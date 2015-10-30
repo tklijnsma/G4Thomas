@@ -52,6 +52,12 @@
 #include "G4PhysicalConstants.hh"
 #include "G4SystemOfUnits.hh"
 
+// For surfaces
+#include "G4OpticalSurface.hh"
+#include "G4LogicalSurface.hh"
+#include "G4LogicalSkinSurface.hh"
+#include "G4LogicalBorderSurface.hh"
+
 
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -138,6 +144,39 @@ void B4DetectorConstruction::DefineMaterials()
     // Vacuum - from B4 example!
     new G4Material("Galactic", z=1., a=1.01*g/mole,density= universe_mean_density,
                   kStateGas, 2.73*kelvin, 3.e-18*pascal);
+
+    // Use Air instead!
+    G4Material* pAir = new G4Material("Air" , density= 1.290*mg/cm3, ncomponents=2);
+    pAir->AddElement(N, fractionmass=0.7);
+    pAir->AddElement(O, fractionmass=0.3);
+
+    const G4int nEntries_RI = 42;
+    G4double PhotonEnergy_RI[nEntries_RI] = {
+        0.1000*eV, 1.0000*eV, 1.0121*eV, 1.0332*eV, 1.0552*eV, 1.0781*eV, 1.1021*eV, 1.1271*eV,
+        1.1533*eV, 1.1808*eV, 1.2096*eV, 1.2398*eV, 1.2716*eV, 1.3051*eV, 1.3404*eV, 1.3776*eV,
+        1.4170*eV, 1.4586*eV, 1.5028*eV, 1.5498*eV, 1.5998*eV, 1.6531*eV, 1.7101*eV, 1.7712*eV,
+        1.8368*eV, 1.9074*eV, 1.9837*eV, 2.0664*eV, 2.1562*eV, 2.2543*eV, 2.3616*eV, 2.4797*eV,
+        2.6102*eV, 2.7552*eV, 2.9173*eV, 3.0996*eV, 3.3062*eV, 3.5424*eV, 3.8149*eV, 4.1328*eV,
+        4.5085*eV, 4.9594*eV };
+
+    G4double refractiveIndex_Air[nEntries_RI] = {
+        1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,
+        1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,
+        1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,
+        1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,
+        1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,    1.0003,
+        1.0003,    1.0003 };
+
+    G4MaterialPropertiesTable* mpt_Air = new G4MaterialPropertiesTable();
+
+    mpt_Air -> AddProperty(
+        "RINDEX",
+        PhotonEnergy_RI,
+        refractiveIndex_Air,
+        nEntries_RI);
+
+    pAir->SetMaterialPropertiesTable(mpt_Air);
+
 
     // active material
     G4Material* sens = new G4Material("CeF3" , density= 6.16*g/cm3, ncomponents=2);
@@ -326,6 +365,8 @@ void B4DetectorConstruction::DefineMaterials()
     // Optical properties of CeF3 (sens)
     //#######################################
 
+    /*
+    // Already defined at definition of Air
     const G4int nEntries_RI = 42;
     G4double PhotonEnergy_RI[nEntries_RI] =
         { 0.1000*eV, 1.0000*eV, 1.0121*eV, 1.0332*eV, 1.0552*eV, 1.0781*eV, 1.1021*eV, 1.1271*eV,
@@ -334,6 +375,7 @@ void B4DetectorConstruction::DefineMaterials()
         1.8368*eV, 1.9074*eV, 1.9837*eV, 2.0664*eV, 2.1562*eV, 2.2543*eV, 2.3616*eV, 2.4797*eV,
         2.6102*eV, 2.7552*eV, 2.9173*eV, 3.0996*eV, 3.3062*eV, 3.5424*eV, 3.8149*eV, 4.1328*eV,
         4.5085*eV, 4.9594*eV };
+    */
 
     G4double refractiveIndex_CeF3[] =
         { 1.68,   1.68, 1.68, 1.68, 1.68, 1.68, 1.68, 1.68, 1.68, 1.68, 1.68,
@@ -479,7 +521,8 @@ G4VPhysicalVolume* B4DetectorConstruction::DefineVolumes()
 
 
     // Get materials
-    G4Material* defaultMaterial = G4Material::GetMaterial("Galactic");
+    //G4Material* defaultMaterial = G4Material::GetMaterial("Galactic");
+    G4Material* defaultMaterial = G4Material::GetMaterial("Air");
     G4Material* absorberMaterial = G4Material::GetMaterial("Tungsten"); // Was G4_Pb
     G4Material* gapMaterial = G4Material::GetMaterial("CeF3"); // Was liquidArgon
 
@@ -635,7 +678,7 @@ G4VPhysicalVolume* B4DetectorConstruction::DefineVolumes()
 
 
     //=======================================
-    // Gap
+    // Gap <-- In this case, CeF3!
 
     G4VSolid* gapS 
     = new G4Box("Gap",             // its name
@@ -647,7 +690,7 @@ G4VPhysicalVolume* B4DetectorConstruction::DefineVolumes()
                  gapMaterial,      // its material
                  "Gap");           // its name
                                    
-    fGapPV
+    G4VPhysicalVolume* fGapPV
     = new G4PVPlacement(
                  0,                // no rotation
                  G4ThreeVector(0., 0., absoThickness/2), // its position
@@ -811,6 +854,93 @@ G4VPhysicalVolume* B4DetectorConstruction::DefineVolumes()
              fCheckOverlaps);  // checking overlaps 
 
 
+    //#######################################
+    // Surfaces
+    //#######################################
+
+    //=======================================
+    // CeF3 = gapLV, inside layerLV, inside calorLV, inside worldLV
+
+    const G4int NUM = 2;
+
+    G4double pp[NUM] = {1.5*eV, 5.1*eV};
+    //G4double rindex[NUM] = {1.59, 1.59};
+    G4double reflectivity[NUM] = {0.5, 0.5};
+    G4double reflectivity_Fib[NUM] = {0.9, 0.9};
+    G4double efficiency[NUM] = {0.9 , 0.9};
+
+    G4MaterialPropertiesTable *OpSurfacePropertyCef3 = new G4MaterialPropertiesTable();
+    OpSurfacePropertyCef3 -> AddProperty("REFLECTIVITY",pp,reflectivity,NUM);
+    //OpSurfacePropertyCef3 -> AddProperty("EFFICIENCY",pp,efficiency,NUM);
+
+    /*
+    // Skip Tyvek surface for now
+    G4OpticalSurface* SurfCef3Tyvek = new G4OpticalSurface("SurfCef3Tyvek");
+
+    SurfCef3Tyvek -> SetType(dielectric_LUT);
+    SurfCef3Tyvek -> SetModel(LUT);
+    SurfCef3Tyvek -> SetFinish(polishedtyvekair);
+    SurfCef3Tyvek -> SetPolish( 0.02);
+    SurfCef3Tyvek -> SetMaterialPropertiesTable(OpSurfacePropertyCef3);
+
+    G4LogicalBorderSurface* CeF3TyvekLayer1Surf = 
+    new G4LogicalBorderSurface("CeF3TyvekLayer1Surf", gapPV, TyvekLayerPV1, SurfCef3Tyvek);
+
+    G4LogicalBorderSurface* CeF3TyvekLayer2Surf = 
+    new G4LogicalBorderSurface("CeF3TyvekLayer2Surf", gapPV, TyvekLayerPV2, SurfCef3Tyvek);
+
+    G4LogicalBorderSurface* CeF3TyvekCover = 
+    new G4LogicalBorderSurface("CeF3TyvekCover", ActPV, TyvekCoverPV, SurfCef3Tyvek );
+    */
+
+
+    //This is the champfer surface 
+    G4OpticalSurface* SurfCef3Air = new G4OpticalSurface("SurfCef3Air");
+
+    SurfCef3Air -> SetType(dielectric_dielectric); 
+    SurfCef3Air -> SetModel(glisur);
+    SurfCef3Air -> SetFinish(polished);
+    SurfCef3Air -> SetPolish(0.4);   
+    SurfCef3Air -> SetMaterialPropertiesTable(OpSurfacePropertyCef3);
+
+    G4LogicalBorderSurface* CeF3Air =
+        new G4LogicalBorderSurface("CeF3Air", fGapPV , worldPV,  SurfCef3Air);
+
+
+    //=======================================
+    // Fibre-Air interface
+
+    G4MaterialPropertiesTable *fibre_surf_mt = new G4MaterialPropertiesTable();
+    //fibre_surf_mt-> AddProperty("REFLECTIVITY",pp,reflectivity_Fib,NUM);
+    //fibre_surf_mt-> AddProperty("EFFICIENCY",pp,efficiency,NUM);
+
+
+    G4OpticalSurface* OpSurfaceFibre = new G4OpticalSurface("OpSurfaceFibre");
+
+    OpSurfaceFibre -> SetType(dielectric_metal);
+    //EMA  OpSurfaceFibre -> SetFinish(polished);
+    OpSurfaceFibre -> SetFinish(ground);
+    OpSurfaceFibre -> SetModel(glisur);
+    //EMA  OpSurfaceFibre -> SetPolish(1.0);
+    OpSurfaceFibre -> SetPolish(0.99);
+
+    //G4OpticalSurface* OpSurfaceFibre = new G4OpticalSurface("OpSurfaceFibre", glisur, polished, dielectric_metal);
+    //OpSurfaceFibre -> SetMaterialPropertiesTable(fibre_surf_mt);
+
+    //EMA  G4LogicalSkinSurface* SurfaceFibre = new G4LogicalSkinSurface("OpSurfaceFibre", fibreLV, OpSurfaceFibre);
+
+    // it is better not to use G4LogicalSkinSurface since it assigns properties to all the borders of the volume!
+    G4LogicalBorderSurface* surfaceCoreClad_in = new G4LogicalBorderSurface("fib_CoreClad_in",FibreCladPV,FibreCorePV,OpSurfaceFibre);
+    G4LogicalBorderSurface* surfaceCoreClad_out = new G4LogicalBorderSurface("fib_CoreClad_out",FibreCorePV,FibreCladPV,OpSurfaceFibre);
+
+    G4OpticalSurface* optical_surface_fib = new G4OpticalSurface("fib_surface");
+    optical_surface_fib->SetType(dielectric_dielectric);
+    optical_surface_fib->SetModel(unified);
+    optical_surface_fib->SetFinish(etchedair);
+
+
+    G4LogicalBorderSurface* FibreAir_in = new G4LogicalBorderSurface("FibreAir", FibreCladPV_placed , worldPV,  optical_surface_fib);    
+    G4LogicalBorderSurface* FibreAir_out = new G4LogicalBorderSurface("FibreAir",  worldPV, FibreCladPV_placed ,  optical_surface_fib);    
 
 
     //#######################################
